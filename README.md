@@ -118,7 +118,7 @@ This ensures the database schema is always up-to-date before the application sta
 - Metrics Collection & Dashboard – Expose Prometheus metrics for message throughput, failures, and scheduler status.
 - Alerting – Integrate with alerting systems (e.g., Slack, email) for failed message delivery.
 - Retry Strategy Enhancements – Implement exponential backoff or dynamic scheduling.
-- Implement Kubernetes-native Liveness and Readiness probes to manage the scheduler's lifecycle and traffic routing effectively.
+- Implement Liveness and Readiness probes to manage the lifecycle.
 - Implement a dedicated, read-only database (the "Query Store") separate from the transactional Write database
 
 ### Failed Messages Recovery / Replay
