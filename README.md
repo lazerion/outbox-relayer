@@ -121,6 +121,7 @@ This ensures the database schema is always up-to-date before the application sta
 ## Improvements / Future Work
 - Metrics Collection & Dashboard – Expose Prometheus metrics for message throughput, failures, and scheduler status.
 - Alerting – Integrate with alerting systems (e.g., Slack, email) for failed message delivery.
+- Extend repository tests beyond go-sqlmock by implementing real component tests. Use a lightweight, PostgreSQL-compatible in-memory database to verify complex SQL and transactional logic, such as the FOR UPDATE SKIP LOCKED query, against a genuine database engine
 - Retry Strategy Enhancements – Implement exponential backoff or dynamic scheduling.
 - Implement Liveness and Readiness probes to manage the lifecycle.
 - Implement a dedicated, read-only database (the "Query Store") separate from the transactional Write database
