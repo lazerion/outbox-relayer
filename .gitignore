@@ -1,0 +1,45 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Files that might appear on external disks
+.Spotlight-V100
+.Trashes
+
+# Go
+/bin/
+/pkg/
+/vendor/
+/out/
+
+# Go Modules
+/go.sum
+
+# GoLand
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Build outputs
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binaries
+*.test
+
+# Temporary files
+*.log
+*.tmp
+
+# Coverage reports
+coverage.out
+
+# Docker
+*.env
