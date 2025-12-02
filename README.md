@@ -18,7 +18,8 @@ An **Automatic Message Sending System** that periodically sends SMS messages thr
 Clone the repository and build the binary using Go:
 
 ```bash
-git clone <repository-url>
+# using SSH
+git clone git@github.com:lazerion/outbox-relayer.git
 cd outbox-relayer
 go mod download
 go build -o outbox-relayer ./cmd/main.go
@@ -75,6 +76,17 @@ Endpoints include:
 
 - GET /messages/sent – Query sent messages with cursor-based pagination
 - POST /scheduler/toggle – Start/stop message sending scheduler
+
+## Sender Response Handling
+
+The sender accepts HTTP 202 responses from the gateway. A typical accepted message response looks like:
+
+```json
+{
+  "message": "Accepted",
+  "messageId": "67f2f8a8-ea58-4ed0-a6f9-ff217df4d849"
+}
+```
 
 ## Error Handling
 
