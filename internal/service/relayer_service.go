@@ -12,21 +12,29 @@ import (
 	"github.com/lazerion/outbox-relayer/internal/schedule"
 )
 
+type SentMessageEvent struct {
+	MessageID string
+	SentAt    time.Time
+}
+
 type RelayerService struct {
 	repo        repository.MessageRepository
 	sender      gateway.Sender
 	batch       int
 	timeout     time.Duration
 	maxAttempts int
+	cacheCh     chan SentMessageEvent
 }
 
-func NewRelayerService(repo repository.MessageRepository, sender gateway.Sender, batch int, timeout time.Duration, maxAttempts int) schedule.Job {
+func NewRelayerService(repo repository.MessageRepository, sender gateway.Sender, batch int, timeout time.Duration, maxAttempts int,
+	cacheCh chan SentMessageEvent) schedule.Job {
 	return &RelayerService{
 		repo:        repo,
 		sender:      sender,
 		batch:       batch,
 		timeout:     timeout,
 		maxAttempts: maxAttempts,
+		cacheCh:     cacheCh,
 	}
 }
 
@@ -68,7 +76,17 @@ func (s *RelayerService) Run(ctx context.Context) error {
 
 		switch strings.ToLower(resp.Message) {
 		case "accepted":
-			_ = s.repo.MarkAsSentTx(ctx, tx, m.ID, resp.MessageID, time.Now())
+			now := time.Now()
+			if err := s.repo.MarkAsSentTx(ctx, tx, m.ID, resp.MessageID, now); err != nil {
+				log.Printf("failed to mark message ID %d as sent: %v", m.ID, err)
+				continue
+			}
+			// Push to cache channel asynchronously, non-blocking
+			select {
+			case s.cacheCh <- SentMessageEvent{MessageID: resp.MessageID, SentAt: now}:
+			default:
+				log.Printf("cache channel full, skipping caching for message ID %d", m.ID)
+			}
 
 		default:
 			log.Printf("sender rejected message ID %d, marking failed: status=%s",

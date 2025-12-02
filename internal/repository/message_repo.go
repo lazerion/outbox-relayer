@@ -23,8 +23,12 @@ func NewPostgresMessageRepository(db *sql.DB) MessageRepository {
 	return &PostgresMessageRepository{db: db}
 }
 
+// FetchPendingTx
+// utilizing `FOR UPDATE SKIP LOCKED` to prevent race conditions and ensure reliability in a multi-instance environment
 func (r *PostgresMessageRepository) FetchPendingTx(ctx context.Context, batchSize int) ([]model.Message, *sql.Tx, error) {
-	tx, err := r.db.BeginTx(ctx, &sql.TxOptions{})
+	tx, err := r.db.BeginTx(ctx, &sql.TxOptions{
+		Isolation: sql.LevelRepeatableRead,
+	})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -60,8 +64,7 @@ func (r *PostgresMessageRepository) FetchPendingTx(ctx context.Context, batchSiz
 func (r *PostgresMessageRepository) IncrementAttemptTx(ctx context.Context, tx *sql.Tx, id int64) error {
 	_, err := tx.ExecContext(ctx, `
         UPDATE messages
-        SET attempts = attempts + 1,
-            last_attempt_time = NOW()
+        SET attempt_count = attempt_count + 1
         WHERE id = $1
     `, id)
 	return err
@@ -85,7 +88,6 @@ func (r *PostgresMessageRepository) MarkAsSentTx(
 }
 
 func (r *PostgresMessageRepository) MarkAsFailedTx(ctx context.Context, tx *sql.Tx, id int64) error {
-	_, err := tx.ExecContext(ctx,
-		`UPDATE messages SET status='failed' WHERE id=$1`, id)
+	_, err := tx.ExecContext(ctx, `UPDATE messages SET status='failed' WHERE id=$1`, id)
 	return err
 }

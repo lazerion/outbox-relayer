@@ -36,12 +36,21 @@ type Migration struct {
 	Path string `mapstructure:"path"`
 }
 
+type RedisConfig struct {
+	Host     string        `mapstructure:"host"`
+	Port     int           `mapstructure:"port"`
+	Password string        `mapstructure:"password"`
+	DB       int           `mapstructure:"db"`
+	TTL      time.Duration `mapstructure:"ttl"`
+}
+
 type Config struct {
 	Postgres  PostgresConfig `mapstructure:"postgres"`
 	Relayer   RelayerConfig  `mapstructure:"relayer"`
 	Webhook   WebhookConfig  `mapstructure:"webhook"`
 	Schedule  ScheduleConfig `mapstructure:"schedule"`
 	Migration Migration      `mapstructure:"migration"`
+	Redis     RedisConfig    `mapstructure:"redis"`
 }
 
 func LoadConfig() (*Config, error) {

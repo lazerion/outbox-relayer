@@ -13,6 +13,7 @@ func NewRelayerServiceProvider(
 	repo repository.MessageRepository,
 	sender gateway.Sender,
 	cfg *config.Config,
+	cacheCh chan SentMessageEvent,
 ) schedule.Job {
 	return NewRelayerService(
 		repo,
@@ -20,6 +21,7 @@ func NewRelayerServiceProvider(
 		cfg.Relayer.Batch,
 		cfg.Relayer.Timeout,
 		cfg.Relayer.MaxAttempts,
+		cacheCh,
 	)
 }
 
@@ -31,6 +33,9 @@ func NewQueryServiceProvider(
 
 var Module = fx.Module(
 	"service",
+	fx.Provide(func() chan SentMessageEvent {
+		return make(chan SentMessageEvent, 10)
+	}),
 	fx.Provide(
 		NewRelayerServiceProvider,
 		NewQueryServiceProvider,

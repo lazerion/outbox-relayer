@@ -45,6 +45,7 @@ func TestRelayerService_Run(t *testing.T) {
 		pendingMsgs    []model.Message
 		expectCommit   bool
 		expectRollback bool
+		expectCacheEvt bool
 	}{
 		{
 			name: "with pending message",
@@ -53,12 +54,14 @@ func TestRelayerService_Run(t *testing.T) {
 			},
 			expectCommit:   true,
 			expectRollback: false,
+			expectCacheEvt: true,
 		},
 		{
 			name:           "no pending messages",
 			pendingMsgs:    []model.Message{},
 			expectCommit:   false,
 			expectRollback: true,
+			expectCacheEvt: false,
 		},
 	}
 
@@ -84,11 +87,27 @@ func TestRelayerService_Run(t *testing.T) {
 					return tt.pendingMsgs, tx, nil
 				},
 			}
-
-			relayer := service.NewRelayerService(repo, &mockSender{}, 10, time.Second, 3)
+			cacheChan := make(chan service.SentMessageEvent, 1)
+			relayer := service.NewRelayerService(repo, &mockSender{}, 10, time.Second, 3, cacheChan)
 			err = relayer.Run(context.Background())
 			require.NoError(t, err)
 			require.NoError(t, mock.ExpectationsWereMet())
+
+			if tt.expectCacheEvt {
+				select {
+				case evt := <-cacheChan:
+					require.Equal(t, "1", evt.MessageID)
+				default:
+					t.Fatalf("expected cache event but none received")
+				}
+			} else {
+				select {
+				case <-cacheChan:
+					t.Fatalf("did not expect cache event but received one")
+				default:
+					// ok
+				}
+			}
 		})
 	}
 }

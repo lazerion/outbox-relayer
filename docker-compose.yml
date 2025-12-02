@@ -17,11 +17,27 @@ services:
       interval: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: outbox-relayer-redis
+    ports:
+      - "6379:6379"
+    command: [ "redis-server", "--appendonly", "yes" ]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   outbox-relayer:
     build: .
     container_name: outbox-relayer
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     environment:
       POSTGRES_HOST: postgres
@@ -29,9 +45,15 @@ services:
       POSTGRES_USER: dev
       POSTGRES_PASSWORD: dev
       POSTGRES_DATABASE: devdb
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_TTL: "300s"
+
     ports:
       - "8080:8080"
     command: [ "./outbox-relayer" ]
 
 volumes:
   pgdata:
+  redisdata:

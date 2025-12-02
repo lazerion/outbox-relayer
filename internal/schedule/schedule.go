@@ -25,7 +25,8 @@ type Scheduler struct {
 	running bool
 	ctx     context.Context
 	cancel  context.CancelFunc
-	wg      sync.WaitGroup
+	wgJob   sync.WaitGroup
+	wgMain  sync.WaitGroup
 }
 
 func NewScheduler(job Job, interval time.Duration) SchedulerInterface {
@@ -45,9 +46,12 @@ func (s *Scheduler) Start(parentCtx context.Context) {
 	}
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	ctx := s.ctx
+	s.wgMain.Add(1)
 	s.mu.Unlock()
 
 	go func() {
+		defer s.wgMain.Done()
+
 		s.runOnce(ctx)
 
 		ticker := time.NewTicker(s.interval)
@@ -56,7 +60,8 @@ func (s *Scheduler) Start(parentCtx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():
-				s.wg.Wait() // wait for in-flight job to finish
+				// Context cancelled, wait for any in-flight job to finish before exiting
+				s.wgJob.Wait()
 				log.Println("scheduler stopped gracefully")
 				return
 			case <-ticker.C:
@@ -75,9 +80,10 @@ func (s *Scheduler) Stop() {
 		s.ctx = nil
 	}
 	s.mu.Unlock()
-	s.wg.Wait()
+	s.wgMain.Wait()
 }
 
+// IsRunning checks the state safely
 func (s *Scheduler) IsRunning() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -95,13 +101,13 @@ func (s *Scheduler) runOnce(ctx context.Context) {
 	s.running = true
 	s.mu.Unlock()
 
-	s.wg.Add(1)
+	s.wgJob.Add(1)
 	go func() {
 		defer func() {
 			s.mu.Lock()
 			s.running = false
 			s.mu.Unlock()
-			s.wg.Done()
+			s.wgJob.Done()
 		}()
 
 		if err := s.job.Run(ctx); err != nil {

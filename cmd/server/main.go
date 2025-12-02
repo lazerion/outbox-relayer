@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/lazerion/outbox-relayer/internal/api"
+	"github.com/lazerion/outbox-relayer/internal/cache"
 	"github.com/lazerion/outbox-relayer/internal/gateway"
 	"github.com/lazerion/outbox-relayer/internal/http"
 	"github.com/lazerion/outbox-relayer/internal/infra"
@@ -24,5 +25,6 @@ func main() {
 		http.Module,
 		infra.Module,
 		schedule.ModuleWithLifeCycle,
+		cache.Module,
 	).Run()
 }

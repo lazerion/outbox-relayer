@@ -90,3 +90,32 @@ func TestPostgresMessageRepository_MarkAsFailedTx(t *testing.T) {
 	}
 	tx.Commit()
 }
+
+func TestPostgresMessageRepository_IncrementAttemptTx(t *testing.T) {
+	db, mock, _ := sqlmock.New()
+	defer db.Close()
+
+	repo := repository.NewPostgresMessageRepository(db)
+	ctx := context.Background()
+	messageID := int64(42)
+
+	mock.ExpectBegin()
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatalf("db.BeginTx failed: %v", err)
+	}
+	mock.ExpectExec(`UPDATE messages`).
+		WithArgs(messageID).
+		WillReturnResult(sqlmock.NewResult(0, 1)) // Expect 1 row affected
+
+	err = repo.IncrementAttemptTx(ctx, tx, messageID)
+	if err != nil {
+		t.Errorf("expected no error from IncrementAttemptTx, got: %v", err)
+	}
+
+	tx.Commit()
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}

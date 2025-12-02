@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lazerion/outbox-relayer/internal/cache"
 	"github.com/lazerion/outbox-relayer/internal/config"
 	"github.com/lazerion/outbox-relayer/internal/gateway"
 	"github.com/lazerion/outbox-relayer/internal/infra"
@@ -69,7 +70,7 @@ func TestRelayerIntegration(t *testing.T) {
 			return &config.Config{
 				Postgres: config.PostgresConfig{
 					Host:     host,
-					Port:     port.Int(), // <-- mapped port
+					Port:     port.Int(),
 					User:     "test",
 					Password: "test",
 					Database: "testdb",
@@ -80,7 +81,7 @@ func TestRelayerIntegration(t *testing.T) {
 					MaxAttempts: 3,
 				},
 				Webhook: config.WebhookConfig{
-					Url:     "https://webhook.site/5dcc9ebe-72f4-4332-bff0-94569bf9748e",
+					Url:     "https://webhook.site/b080d123-474c-48c2-bff2-986a6e3e7ce2",
 					AuthKey: "",
 					Timeout: time.Second,
 				},
@@ -90,6 +91,9 @@ func TestRelayerIntegration(t *testing.T) {
 				Migration: config.Migration{
 					Path: "../../infra/migrations",
 				},
+				Redis: config.RedisConfig{
+					Host: "localhost",
+				},
 			}
 		}),
 		infra.Module,
@@ -98,13 +102,14 @@ func TestRelayerIntegration(t *testing.T) {
 		service.Module,
 		schedule.Module,
 		schedule.ModuleWithLifeCycle,
+		cache.Module,
 	)
 
 	require.NoError(t, app.Start(ctx))
 	defer app.Stop(ctx)
 
 	_, err := db.Exec(`INSERT INTO messages (phone_number, content) 
-				VALUES('+1234567890','hello'),('+9876543210','world')`)
+				VALUES('+1234567890','hello'),('+9876543210','world'),('+4269696969','sent me')`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,7 +118,6 @@ func TestRelayerIntegration(t *testing.T) {
 		var c int
 		err := db.QueryRow(`SELECT count(*) FROM messages WHERE status != 'sent'`).Scan(&c)
 		if err != nil {
-			// optionally log or handle the error
 			return false
 		}
 		return c == 0
