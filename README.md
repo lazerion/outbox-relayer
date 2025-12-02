@@ -54,6 +54,7 @@ docker-compose up --build
 This will spin up:
 - postgres container with a devdb database
 - outbox-relayer container exposing port 8080
+- redis container for sent message caching
 
 Alternatively, run manually with a local PostgreSQL instance:
 ```bash
