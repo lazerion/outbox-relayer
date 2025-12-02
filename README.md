@@ -70,7 +70,11 @@ Configuration is loaded from internal/config/config.yaml and can be overridden u
 
 ## Swagger Endpoint
 
-The API is documented with Swagger:
+Once the service is running locally, you can access the Swagger UI here:
+
+👉 **http://localhost:8080/api/v1/swagger/index.html**
+
+This page provides interactive API documentation for all available endpoints.
 
 Endpoints include:
 
