@@ -22,7 +22,7 @@ Clone the repository and build the binary using Go:
 git clone git@github.com:lazerion/outbox-relayer.git
 cd outbox-relayer
 go mod download
-go build -o outbox-relayer ./cmd/main.go
+go build -o outbox-relayer ./cmd/server/main.go
 ```
 
 Alternatively, build a Docker image:
